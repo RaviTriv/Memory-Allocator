@@ -62,27 +62,45 @@
 //    return (void*)(header + 1);
    
 // }
-
-pthread_mutex_t mutext;
+pthread_t thread1, thread2;
+pthread_mutex_t mutex;
 
 int testN = 0;
 int* testP = &testN;
 
-void testMutex(int inputA, int inpuptB){
-    printf("TEST VALUE: %d\n", *testP);
-    pthread_mutex_lock(&mutext);
-    *testP+=2;
-    printf("TEST VALUE: %d\n", *testP);
+void* function1(){   
+    pthread_mutex_lock(&mutex); 
+    printf("VALUE: %d \n", *testP);
+    while(*testP < 0xFFFFFFFF){
+        *testP+=1;
+    }
+    printf("VALUE POST ADD: %d \n", *testP);
+    pthread_mutex_unlock(&mutex);
+}
+
+void* function2(){
+    pthread_mutex_lock(&mutex);
+    printf("VALUE F2: %d \n", *testP);
+    while(*testP < (0xFFFFFFFF * 4)){
+        *testP+=2;
+    }
+    printf("VALUE POST ADD F2: %d \n", *testP);
+    pthread_mutex_unlock(&mutex);
 
 }
-void testMutextSecond(){
-    *testP+=1;
-    printf("TEST VALUE FROM SEECOND FUNCTION: %d", *testP);
-}
+
 
 int main(int argc, char *argv[]){
-    testMutex(1, 2);
-    testMutextSecond();
+    if (pthread_mutex_init(&mutex, NULL) != 0) { 
+		printf("\n mutex init has failed\n"); 
+		return 1; 
+	} 
+    
+    pthread_create( &thread1, NULL, &function1, NULL);
+    pthread_create( &thread2, NULL, &function2, NULL);
+    pthread_join( thread1, NULL);
+    pthread_join( thread2, NULL);
+    pthread_mutex_destroy(&mutex); 
     //malloc(21);
 }
 
