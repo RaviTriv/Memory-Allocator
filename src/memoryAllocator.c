@@ -69,6 +69,33 @@ void *malloc(size_t size)
     return (void *)(header + 1);
 }
 
+
+void free(void *ptr){
+    pthread_mutex_lock(&mutex);
+    header_t *header, *t;
+    header = (header_t *)ptr - 1;
+    void *prgBrk = sbrk(0);
+    if((char *)ptr + header->h.size == prgBrk){
+        if(head == tail){
+            head = NULL;
+            tail = NULL;
+        }else{
+            t = head;
+            while(t){
+                if(t->h.next == tail){
+                    t->h.next = NULL;
+                    tail = t;
+                }
+                t = t->h.next;
+            }
+        }
+        sbrk(0 - header->h.size - sizeof(header_t));
+        return;
+    }  
+    header -> h.is_free = 1;
+    pthread_mutex_unlock(&mutex);
+}
+
 int main(int argc, char *argv[])
 {
     int n = 5;
@@ -83,4 +110,6 @@ int main(int argc, char *argv[])
     {
         printf("%d: %d \n", i, *(t1 + i));
     }
+    
+    free(t1);
 }
